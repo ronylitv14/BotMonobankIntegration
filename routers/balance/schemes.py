@@ -2,7 +2,7 @@ import decimal
 from typing import List
 
 from pydantic import BaseModel, ConfigDict
-from database.crud import BalanceAction
+from database.cruds.balance import BalanceAction
 
 
 class UpdateUserCardsRequest(BaseModel):

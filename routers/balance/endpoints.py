@@ -1,15 +1,19 @@
-from fastapi import status, Response
+from fastapi import status
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 
 from routers.balance.schemes import UpdateUserCardsRequest, NewBalanceRequest, UpdateBalanceRequest, BalanceResponse
-from database.crud import update_balance, get_user_balance, create_user_balance, update_user_cards, set_new_balance
+from database.cruds.balance import update_balance, get_user_balance, create_user_balance, update_user_cards, \
+    set_new_balance
 
 balance_router = APIRouter(
     prefix="/balance",
-    tags=["balance"]
+    tags=["balance"],
+    dependencies=[Security(verify_token)]
 )
 
 
