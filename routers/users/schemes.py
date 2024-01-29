@@ -1,9 +1,7 @@
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, StrictInt
-from database.models import User, UserStatus
-
-from typing_extensions import Annotated
+from pydantic import BaseModel, ConfigDict
+from database.models import UserStatus
 
 
 class UserResponseModel(BaseModel):

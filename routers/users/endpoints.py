@@ -1,6 +1,6 @@
-import sys
 from typing import List
-
+from fastapi import Security
+from config import verify_token
 from fastapi.routing import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi import status
@@ -8,12 +8,14 @@ from fastapi.responses import JSONResponse
 
 from routers.users.schemes import UserCreateRequest, UserUpdateRequest, BanStatusRequest, GetSimilarityUsersRequest, \
     UserResponseModel
-from database.crud import get_user_auth, get_executor_auth, delete_user_from_db, save_user_to_db, update_user_email, \
+
+from database.cruds.users import get_user_auth, delete_user_from_db, save_user_to_db, update_user_email, \
     update_user_phone, update_user_nickname, get_default_users, update_ban_status, get_similarity_users
 
 users_router = APIRouter(
     prefix="/users",
-    tags=["users"]
+    tags=["users"],
+    dependencies=[Security(verify_token)]
 )
 
 
@@ -24,15 +26,6 @@ async def get_user(telegram_id: int):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     return user
-
-
-# # Get an executor by Telegram ID
-# @users_router.get("/executors/{telegram_id}")
-# async def get_executor(telegram_id: int):
-#     executor = await get_executor_auth(telegram_id)
-#     if not executor:
-#         raise HTTPException(status_code=404, detail="Executor not found.")
-#     return executor
 
 
 # Delete a user
