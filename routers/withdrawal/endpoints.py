@@ -1,16 +1,19 @@
 import datetime
-from typing import Optional, List
+from typing import List
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from routers.withdrawal.schemes import WithdrawalRequestModel, UpdateWithdrawalRequestModel, WithdrawalResponse
-from database.crud import create_withdrawal_request, get_all_withdrawal_requests, update_withdrawal_request
 from database.models import WithdrawalStatus
+from database.cruds.withdrawals import create_withdrawal_request, get_all_withdrawal_requests, update_withdrawal_request
 from sqlalchemy.exc import IntegrityError
 
 withdrawal_router = APIRouter(
     prefix="/withdrawals",
-    tags=["withdrawals"]
+    tags=["withdrawals"],
+    dependencies=[Security(verify_token)]
 )
 
 
@@ -18,7 +21,6 @@ withdrawal_router = APIRouter(
 async def create_withdrawal(request: WithdrawalRequestModel):
     try:
         await create_withdrawal_request(**request.model_dump())
-
     except IntegrityError:
         raise HTTPException(status_code=500, detail="Error saving data!")
     return JSONResponse(status_code=201, content={"message": "Withdrawal request created successfully."})

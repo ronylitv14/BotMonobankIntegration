@@ -1,5 +1,3 @@
-import decimal
-from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, condecimal
 from database.models import WithdrawalStatus
@@ -10,8 +8,8 @@ from datetime import datetime
 class WithdrawalRequestModel(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
     user_id: int
-    amount: decimal.Decimal
-    commission: decimal.Decimal
+    amount: condecimal(max_digits=10, decimal_places=2)
+    commission: condecimal(max_digits=10, decimal_places=2)
     status: WithdrawalStatus
     payment_method: str
 
@@ -22,6 +20,7 @@ class UpdateWithdrawalRequestModel(BaseModel):
     request_id: int
     new_status: WithdrawalStatus
     admin_id: int
+    # processed_time: datetime
 
 
 class WithdrawalResponse(BaseModel):
