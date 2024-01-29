@@ -1,6 +1,7 @@
 from typing import List
 
-from fastapi import status
+from fastapi import status, Security, Query
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from fastapi.exceptions import HTTPException
@@ -9,25 +10,27 @@ from routers.users.schemes import UserResponseModel
 from routers.executors.schemes import ExecutorProfileRequest, UpdateApplicationStatusRequest, TaskModel, \
     ExecutorResponse
 
-from database.crud import get_executor_orders, get_executor, get_all_executors_profiles, create_executor_profile, \
-    get_executor_applications, TaskStatus
+from database.cruds.executors import get_executor_orders, get_executor, get_all_executors_profiles, \
+    create_executor_profile, \
+    update_executor_application_status, get_executor_applications, TaskStatus
+
+from sqlalchemy.exc import IntegrityError
 
 executors_router = APIRouter(
     prefix="/executors",
-    tags=["executors"]
+    tags=["executors"],
+    dependencies=[Security(verify_token)]
+
 )
 
 
 # Retrieve executor orders by executor ID
-@executors_router.get("/{executor_id}/{status}", response_model=list[TaskModel])
-async def get_executor_tasks(executor_id: int, status: TaskStatus):
-    orders = await get_executor_orders(executor_id, status)
+@executors_router.get("/{executor_id}/", response_model=list[TaskModel])
+async def get_executor_tasks(executor_id: int, status: List[TaskStatus] = Query()):
+    orders = await get_executor_orders(executor_id, *status)
     if not orders:
         raise HTTPException(status_code=404, detail="Executor orders not found.")
     return orders
-
-
-from sqlalchemy.exc import IntegrityError
 
 
 # Create an executor profile
@@ -68,3 +71,14 @@ async def get_applications():
     if not applications:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No applications found.")
     return applications
+
+
+@executors_router.patch("/applications/")
+async def change_application_status(application_data: UpdateApplicationStatusRequest):
+    try:
+        await update_executor_application_status(**application_data.model_dump())
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Something wrong with saving data!")
+    return JSONResponse(status_code=status.HTTP_201_CREATED,
+                        content={"message": "Executor profile created successfully."})

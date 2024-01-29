@@ -37,7 +37,7 @@ class TaskModel(BaseModel):
     client_id: Optional[int] = None
     status: TaskStatus
     price: str
-    date_added: datetime.utcnow
+    date_added: datetime
     deadline: Optional[datetime] = None
     proposed_by: PropositionBy = PropositionBy.public
     files: Optional[List[str]] = None
