@@ -2,7 +2,7 @@ from fastapi import Security, status, HTTPException
 from fastapi.routing import APIRouter
 from sqlalchemy.exc import IntegrityError
 from config import verify_token
-from database.crud import create_user_warning
+from database.cruds.warnings_crud import create_user_warning
 from routers.warnings.schemes import WarningData
 
 warnings_router = APIRouter(
@@ -13,7 +13,7 @@ warnings_router = APIRouter(
 
 
 @warnings_router.post("/")
-async def create_user_warning(warning_data: WarningData):
+async def save_user_warning(warning_data: WarningData):
     try:
         await create_user_warning(**warning_data.model_dump())
     except IntegrityError as err:

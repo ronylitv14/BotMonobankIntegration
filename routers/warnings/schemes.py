@@ -6,3 +6,4 @@ class WarningData(BaseModel):
     user_id: int
     reason: str
     issued_by: int
+    warning_count: int
