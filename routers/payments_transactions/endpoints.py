@@ -1,24 +1,33 @@
 from typing import List
 
 from fastapi import HTTPException, status, Query
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
-from database.crud import add_transaction_data, update_transaction_status, get_user_transactions, \
-    check_successful_payment, accept_done_offer, create_money_transfer
+# from database.crud import add_transaction_data, update_transaction_status, get_user_transactions, \
+#     check_successful_payment, accept_done_offer, create_money_transfer
+
+from database.cruds.transactions import add_transaction_data, update_transaction_status, get_user_transactions
+from database.cruds.payments import check_successful_payment, accept_done_offer, create_money_transfer
 
 from routers.payments_transactions.schemes import TransactionDataRequest, UpdateTransactionStatusRequest, \
-    CheckSuccessfulPaymentRequest, AcceptDoneOfferRequest, CreateTransfer, TransactionResponse, SuccessPayment
+    AcceptDoneOfferRequest, CreateTransfer, TransactionResponse, SuccessPayment
 
 from sqlalchemy.exc import IntegrityError
 
 payments_router = APIRouter(
     prefix="/payments",
-    tags=["payments"]
+    tags=["payments"],
+    dependencies=[Security(verify_token)]
+
 )
 
 transactions_router = APIRouter(
     prefix="/transactions",
-    tags=["transactions"]
+    tags=["transactions"],
+    dependencies=[Security(verify_token)]
+
 )
 
 
