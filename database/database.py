@@ -1,9 +1,12 @@
+import decimal
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from dotenv import load_dotenv
 
 load_dotenv()
+
+COMMISSION = decimal.Decimal("0.03")
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
