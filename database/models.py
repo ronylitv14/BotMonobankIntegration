@@ -1,8 +1,8 @@
 import decimal
 from datetime import datetime
 from typing import List, Optional
-
-from sqlalchemy.orm import validates
+from sqlalchemy import false, true
+from sqlalchemy.orm import validates, Mapped
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -51,9 +51,9 @@ class ProfileStatus(enum.StrEnum):
 
 
 class PropositionBy(enum.StrEnum):
-    executor: str = "Executor"
-    client: str = "Client"
-    public: str = "Public"
+    executor: str = "executor"
+    client: str = "client"
+    public: str = "public"
 
 
 class FileType(enum.StrEnum):
@@ -68,9 +68,9 @@ class UserStatus(enum.StrEnum):
 
 
 class WithdrawalStatus(enum.StrEnum):
-    pending: str = "Pending"
-    processed: str = "Processed"
-    rejected: str = "Rejected"
+    pending: str = "pending"
+    processed: str = "processed"
+    rejected: str = "rejected"
 
 
 class User(Base):
@@ -118,7 +118,7 @@ class User(Base):
 class ResetToken(Base):
     __tablename__ = "reset_tokens"
 
-    user_id = Column(ForeignKey("users.telegram_id"), primary_key=True)
+    user_id = Column(BIGINT, ForeignKey("users.telegram_id"), primary_key=True)
     reset_password_token = Column(String, nullable=False)
     expire_date = Column(TIMESTAMP, nullable=False)
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
@@ -214,17 +214,21 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, unique=True, primary_key=True, autoincrement=True)
-    chat_id = Column(BIGINT, unique=True, primary_key=True)
-    supergroup_id = Column(BIGINT, unique=True, nullable=True)
+    chat_id = Column(BIGINT, unique=False, primary_key=True)
+    supergroup_id = Column(BIGINT, unique=False, nullable=True)
     task_id = Column(Integer, ForeignKey("tasks.task_id"))
     executor_id = Column(BIGINT, ForeignKey("executors.user_id"), nullable=False)
     client_id = Column(BIGINT, ForeignKey("users.telegram_id"), nullable=False)
+    active = Column(Boolean, server_default=true(), default=true(), nullable=False)
     group_name = Column(String, nullable=False)
     chat_type = Column(Enum(ChatType), nullable=False, default=ChatType.GROUP)
     chat_admin = Column(String, nullable=False)
     date_created = Column(TIMESTAMP, default=datetime.utcnow)
     participants_count = Column(Integer, nullable=True)
     invite_link = Column(String, nullable=True)
+    is_payed = Column(Boolean, server_default=false(), nullable=False)
+    in_use = Column(Boolean, server_default=false(), nullable=False)
+    payment_date = Column(TIMESTAMP, nullable=True)
 
     __table_args__ = (
         UniqueConstraint('chat_id', 'task_id', 'executor_id', 'client_id', name='unique_combination_chat'),
@@ -232,7 +236,8 @@ class Chat(Base):
 
     def __init__(self, chat_id: int, task_id: int, group_name: str, participants_count: int,
                  invite_link: str, executor_id: int, client_id: int, chat_admin: str,
-                 chat_type: ChatType = ChatType.GROUP, ):
+                 supergroup_id: Optional[int] = None, chat_type: ChatType = ChatType.GROUP,
+                 is_payed: bool = False, active: bool = True, in_use: bool = False):
         self.chat_id = chat_id
         self.task_id = task_id
         self.group_name = group_name
@@ -242,6 +247,10 @@ class Chat(Base):
         self.client_id = client_id
         self.chat_admin = chat_admin
         self.chat_type = chat_type
+        self.is_payed = is_payed
+        self.active = active
+        self.supergroup_id = supergroup_id
+        self.in_use = in_use
 
     def __repr__(self):
         return f"<Chat {self.group_name} (ID: {self.chat_id})>"
@@ -266,7 +275,7 @@ class GroupMessage(Base):
 
 class Balance(Base):
     __tablename__ = "balance"
-    user_id = Column(ForeignKey("users.telegram_id", ondelete="CASCADE"), primary_key=True, unique=True)
+    user_id = Column(BIGINT, ForeignKey("users.telegram_id", ondelete="CASCADE"), primary_key=True, unique=True)
     user_cards = Column(ARRAY(String), nullable=True)
     balance_money = Column(DECIMAL(10, 2), nullable=False, default=0.00)
 
@@ -281,8 +290,8 @@ class Transaction(Base):
 
     transaction_id = Column(Integer, primary_key=True, autoincrement=True)
     invoice_id = Column(String, primary_key=True)
-    sender_id = Column(Integer, ForeignKey('users.telegram_id'), nullable=True)
-    receiver_id = Column(Integer, ForeignKey('users.telegram_id'), nullable=True)
+    sender_id = Column(BIGINT, ForeignKey('users.telegram_id', ondelete="SET NULL"), nullable=True)
+    receiver_id = Column(BIGINT, ForeignKey('users.telegram_id', ondelete="SET NULL"), nullable=True)
     task_id = Column(Integer, ForeignKey('tasks.task_id'), nullable=True)
     amount = Column(DECIMAL(10, 2))
     commission = Column(DECIMAL(precision=10, scale=2), nullable=True, default=decimal.Decimal(0.00))
@@ -315,7 +324,7 @@ class WithdrawalRequest(Base):
     __tablename__ = 'withdrawal_requests'
 
     request_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.telegram_id', ondelete="CASCADE"), nullable=False)
+    user_id = Column(BIGINT, ForeignKey('users.telegram_id', ondelete="CASCADE"), nullable=False)
     amount = Column(DECIMAL(10, 2), nullable=False)
     commission = Column(DECIMAL(10, 2), nullable=False)
     request_date = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
@@ -356,7 +365,7 @@ class Warning(Base):
     warning_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(BIGINT, ForeignKey("users.telegram_id"))
     reason = Column(String, nullable=False)
-    issued_by = Column(BIGINT)  # Admin's ID or username
+    issued_by = Column(BIGINT)
     issued_at = Column(TIMESTAMP, default=datetime.utcnow)
 
     def __init__(
@@ -404,3 +413,30 @@ class UserTicket(Base):
 
     def __repr__(self):
         return f"Тікет номер №{self.ticket_id} - категорія: {self.subject}"
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    review_id = Column(Integer, primary_key=True, autoincrement=True)
+    reviewer_id = Column(BIGINT, ForeignKey("users.telegram_id"), nullable=False)
+    reviewed_id = Column(BIGINT, ForeignKey("users.telegram_id"), nullable=False)
+    task_id = Column(Integer, ForeignKey("tasks.task_id"), nullable=False)
+    rating = Column(Integer, nullable=False)
+    positive_sights = Column(ARRAY(String), nullable=True)
+    negative_sights = Column(ARRAY(String), nullable=True)
+    comment = Column(String, nullable=True)
+    review_date = Column(TIMESTAMP, default=datetime.utcnow)
+
+    def __init__(self, reviewer_id: int, reviewed_id: int, task_id: int, rating: int, comment: str = None,
+                 positive_sights: List[str] = None, negative_sights: List[str] = None):
+        self.reviewer_id = reviewer_id
+        self.reviewed_id = reviewed_id
+        self.task_id = task_id
+        self.rating = rating
+        self.comment = comment
+        self.positive_sights = positive_sights
+        self.negative_sights = negative_sights
+
+    def __repr__(self):
+        return f"<Review {self.review_id} by {self.reviewer_id} for {self.reviewed_id}>"
