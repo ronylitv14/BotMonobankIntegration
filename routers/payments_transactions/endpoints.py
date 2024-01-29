@@ -5,9 +5,6 @@ from fastapi import Security
 from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
-# from database.crud import add_transaction_data, update_transaction_status, get_user_transactions, \
-#     check_successful_payment, accept_done_offer, create_money_transfer
-
 from database.cruds.transactions import add_transaction_data, update_transaction_status, get_user_transactions
 from database.cruds.payments import check_successful_payment, accept_done_offer, create_money_transfer
 
