@@ -13,6 +13,7 @@ class ChatDataRequest(BaseModel):
     client_id: int
     executor_id: int
     chat_admin: str
+    supergroup_id: Optional[int] = None
 
 
 class ChatResponse(BaseModel):
@@ -26,14 +27,13 @@ class ChatResponse(BaseModel):
     group_name: str
     chat_type: ChatType
     chat_admin: str
+    active: bool = True
+    is_payed: bool = False
     date_created: datetime.datetime
+    payment_date: Optional[datetime.datetime] = None
     participants_count: Optional[int] = None
     invite_link: Optional[str] = None
-
-
-class ChatObjectRequest(BaseModel):
-    chat_id: Optional[int] = None
-    db_chat_id: Optional[int] = None
+    in_use: bool
 
 
 class UpdateChatStatusRequest(BaseModel):
@@ -46,3 +46,12 @@ class UpdateChatStatusRequest(BaseModel):
 class UpdateGroupTitleRequest(BaseModel):
     db_chat_id: int
     group_name: str
+
+
+class UpdateChatField(BaseModel):
+    # db_chat_id: int
+    active: Optional[bool] = None
+    group_name: Optional[str] = None
+    participants_count: Optional[int] = None
+    in_use: Optional[bool] = None
+
