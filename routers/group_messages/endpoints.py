@@ -1,14 +1,18 @@
 from fastapi import status
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from fastapi.exceptions import HTTPException
 
 from routers.group_messages.schemes import GroupMessageRequest, GroupMessageResponse
-from database.crud import add_group_message, get_group_message
+from database.cruds.group_messages import add_group_message, get_group_message
 
 group_router = APIRouter(
     prefix="/group-messages",
-    tags=["group-messages"]
+    tags=["group-messages"],
+    dependencies=[Security(verify_token)]
+
 )
 
 

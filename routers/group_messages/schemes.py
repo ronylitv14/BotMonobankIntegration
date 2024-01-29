@@ -1,7 +1,4 @@
 import datetime
-from typing import List, Optional
-from database.models import TaskStatus
-
 from pydantic import BaseModel, ConfigDict
 
 
