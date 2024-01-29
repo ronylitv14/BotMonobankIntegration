@@ -1,16 +1,19 @@
-from typing import Optional, List
-from fastapi import status, Query
+from typing import List
+from fastapi import status
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
-from database.crud import create_user_ticket, get_user_tickets, update_ticket_status
+from database.cruds.tickets import create_user_ticket, get_user_tickets, update_ticket_status
 from routers.tickets.schemes import UserTicketRequest, TicketStatusUpdateRequest, UserTicketResponse
 from database.models import TicketStatus
 from sqlalchemy.exc import IntegrityError
 
 tickets_router = APIRouter(
     prefix="/tickets",
-    tags=["tickets"]
+    tags=["tickets"],
+    dependencies=[Security(verify_token)]
 )
 
 
