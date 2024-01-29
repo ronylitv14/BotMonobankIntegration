@@ -1,33 +1,39 @@
 from typing import List
 
 from fastapi import status, Query
+from fastapi import Security
+from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from fastapi.exceptions import HTTPException
 
 from database.models import TaskStatus, PropositionBy
-from routers.tasks.schemes import TaskCreateRequest, TaskUpdateFilesRequest, TaskUpdateStatusRequest, \
-    ProposedDealsRequest, TaskResponse
-from database.crud import UserType
-from database.crud import save_task_to_db, update_task_files, update_task_status, get_all_tasks, get_user_by_task_id, \
-    get_proposed_deals, get_task
+from routers.tasks.schemes import TaskCreateRequest, TaskUpdateStatusRequest, TaskResponse
+
+from database.cruds.tasks import save_task_to_db, update_task_status, get_all_tasks, get_user_by_task_id, get_task, \
+    get_proposed_deals, UserType
+
 from sqlalchemy.exc import IntegrityError
 from routers.users.schemes import UserResponseModel
 
 task_router = APIRouter(
     prefix="/tasks",
-    tags=["tasks"]
+    tags=["tasks"],
+    dependencies=[Security(verify_token)]
+
 )
 
 
 # Save a task to the database
 @task_router.post("/", response_model=TaskResponse)
 async def create_task(task_data: TaskCreateRequest):
+    print(task_data.proposed_by)
     try:
         task = await save_task_to_db(**task_data.model_dump())
     except (IntegrityError, AttributeError):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error with saving task data!")
     return task
+
 
 # Update task status
 @task_router.patch("/status/{task_id}")
@@ -52,7 +58,7 @@ async def get_all_tasks_db(
         user_id: int,
         user_type: UserType,
         task_id: int = None,
-        task_status: List[TaskStatus] = Query(),  # Modify this line
+        task_status: List[TaskStatus] = Query(),
 ):
     try:
         tasks = await get_all_tasks(user_id, user_type, *task_status, task_id=task_id)

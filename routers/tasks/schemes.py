@@ -17,7 +17,7 @@ class TaskCreateRequest(BaseModel):
     files: Optional[List[str]] = None
     files_type: Optional[List[FileType]] = None
     description: Optional[str] = None
-    proposed_by: Optional[PropositionBy] = None
+    proposed_by: Optional[PropositionBy] = PropositionBy.public
     executor_id: Optional[int] = None
 
 
@@ -26,16 +26,6 @@ class TaskResponse(TaskCreateRequest):
     task_id: int
 
 
-class TaskUpdateFilesRequest(BaseModel):
-    files: List[str]
-
-
 class TaskUpdateStatusRequest(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
     status: TaskStatus
-
-
-class ProposedDealsRequest(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
-    proposed_by: PropositionBy  # Assuming PropositionBy can be represented as a string
-    user_id: int
