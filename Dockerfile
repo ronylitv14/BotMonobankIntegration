@@ -1,10 +1,13 @@
-FROM python:3-alpine3.11
+FROM python:3.11-alpine3.17
+
 
 WORKDIR /src/app
 
 COPY ./requirements.txt /src/app/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /src/app/requirements.txt
+RUN apk add --no-cache postgresql-dev rust cargo \
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir --upgrade -r /src/app/requirements.txt
 
 COPY . /src/app
 
