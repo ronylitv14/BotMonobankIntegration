@@ -11,6 +11,4 @@ RUN apk add --no-cache postgresql-dev rust cargo \
 
 COPY . /src/app
 
-RUN alembic upgrade heads
-
 CMD ["uvicorn", "main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
