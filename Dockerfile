@@ -11,4 +11,4 @@ RUN apk add --no-cache postgresql-dev rust cargo \
 
 COPY . /src/app
 
-CMD ["uvicorn", "main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8088"]
