@@ -1,7 +1,10 @@
 import decimal
 from datetime import datetime
+from aiogram.enums import ChatType
+
 from typing import List, Optional
-from sqlalchemy import false, true
+
+from sqlalchemy import false, true, func
 from sqlalchemy.orm import validates, Mapped
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_method
@@ -17,7 +20,8 @@ from sqlalchemy import (
     DATE,
     DECIMAL,
     ForeignKey,
-    UniqueConstraint
+    UniqueConstraint,
+    LargeBinary
 )
 import enum
 
@@ -87,9 +91,11 @@ class User(Base):
     hashed_password = Column(String)
     phone = Column(String, primary_key=True, unique=True)
     email = Column(String, nullable=True)
+    date_added = Column(TIMESTAMP, nullable=False, server_default=func.now())
 
     def __init__(self, tg_id: int, username: str, phone: str, password: str, chat_id: int, tg_username: str,
-                 user_status: UserStatus = UserStatus.default, email: str = ""):
+                 user_status: UserStatus = UserStatus.default, email: str = "",
+                 date_added: datetime = datetime.utcnow()):
         self.telegram_id = tg_id
         self.telegram_username = tg_username
         self.username = username
@@ -98,6 +104,7 @@ class User(Base):
         self.email = email
         self.chat_id = chat_id
         self.user_status = user_status
+        self.date_added = date_added
 
     def __str__(self):
         return f"Ім'я в системі: {self.username}, статус: {self.user_status.value}"
@@ -207,9 +214,6 @@ class Task(Base):
         return f"Номер замовлення: {self.task_id}, Вид роботи: {type_str}, Предмети: {subj_str}"
 
 
-from aiogram.enums import ChatType
-
-
 class Chat(Base):
     __tablename__ = "chats"
 
@@ -276,10 +280,10 @@ class GroupMessage(Base):
 class Balance(Base):
     __tablename__ = "balance"
     user_id = Column(BIGINT, ForeignKey("users.telegram_id", ondelete="CASCADE"), primary_key=True, unique=True)
-    user_cards = Column(ARRAY(String), nullable=True)
+    user_cards = Column(ARRAY(LargeBinary), nullable=True)
     balance_money = Column(DECIMAL(10, 2), nullable=False, default=0.00)
 
-    def __init__(self, user_id: int, user_cards: List[str] = None, balance_money: float = 0.00):
+    def __init__(self, user_id: int, user_cards: List = None, balance_money: float = 0.00):
         self.user_id = user_id
         self.user_cards = user_cards
         self.balance_money = balance_money

@@ -15,7 +15,7 @@ class ExecutorProfileRequest(BaseModel):
 
 
 class ExecutorResponse(BaseModel):
-    model_config = ConfigDict(use_enum_values=True, from_attributes=True)
+    model_config = ConfigDict(use_enum_values=True)
     user_id: int
     profile_state: ProfileStatus
     executor_id: int

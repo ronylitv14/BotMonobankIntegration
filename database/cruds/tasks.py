@@ -2,7 +2,7 @@ import datetime
 import enum
 from typing import List, Optional
 
-from sqlalchemy import update, select
+from sqlalchemy import update, select, asc
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from database.database import async_session
@@ -100,7 +100,7 @@ async def get_all_tasks(
                     Task.task_id == task_id
                 )
 
-            orders = await session.execute(default_stmt)
+            orders = await session.execute(default_stmt.order_by(asc(Task.task_id)))
 
             orders = orders.scalars().all()
             return orders
@@ -136,7 +136,6 @@ async def get_proposed_deals(
         async with async_session() as session:
 
             if proposed_by == PropositionBy.client:
-                # executor: Executor = await get_executor(user_id)
 
                 result = await session.execute(
                     select(Task).where(

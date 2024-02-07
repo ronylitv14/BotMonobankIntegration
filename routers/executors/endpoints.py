@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import List
 
 from fastapi import status, Security, Query
@@ -24,9 +25,19 @@ executors_router = APIRouter(
 )
 
 
+# Get executor applications
+@executors_router.get("/applications/", response_model=List[ExecutorResponse])
+async def get_executor_applications_data():
+    applications = await get_executor_applications()
+    pprint(applications)
+    if not applications:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No applications found.")
+    return applications
+
+
 # Retrieve executor orders by executor ID
 @executors_router.get("/{executor_id}/", response_model=list[TaskModel])
-async def get_executor_tasks(executor_id: int, status: List[TaskStatus] = Query()):
+async def get_executor_tasks(executor_id: int, status: List[TaskStatus] = Query(None)):
     orders = await get_executor_orders(executor_id, *status)
     if not orders:
         raise HTTPException(status_code=404, detail="Executor orders not found.")
@@ -62,15 +73,6 @@ async def get_all_executors_data():
     if not executors:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Executor not found.")
     return executors
-
-
-# Get executor applications
-@executors_router.get("/applications/", response_model=List[ExecutorResponse])
-async def get_applications():
-    applications = await get_executor_applications()
-    if not applications:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No applications found.")
-    return applications
 
 
 @executors_router.patch("/applications/")
