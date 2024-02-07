@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import array, insert
 
 from database.database import async_session
 from database.models import Balance
+from utils.card_tokenization import encrypt_card_number, decrypt_card_number
 
 
 class BalanceAction(enum.StrEnum):
@@ -50,7 +51,11 @@ async def get_user_balance(user_id: int) -> Balance:
                 )
             )
 
-            return result.scalars().first()
+            balance_data = result.scalars().first()
+
+            balance_data.user_cards = [decrypt_card_number(card) for card in balance_data.user_cards]
+
+            return balance_data
     except IntegrityError:
         await session.rollback()
 
@@ -75,17 +80,16 @@ async def update_user_cards(user_id: int, card: str):
     try:
         async with async_session() as session:
 
-            # Use the distinct operator to ensure the card is not already in the array
+            card = encrypt_card_number(card)
+
             stmt = insert(Balance).values(user_id=user_id, user_cards=[card])
 
             do_update_stmt = stmt.on_conflict_do_update(
                 index_elements=['user_id'],
                 set_={
-                    # Use the distinct operator to ensure the card is not already in the array
-                    'user_cards': Balance.user_cards.op('||')(array([card], type_="CHAR"))
+                    'user_cards': Balance.user_cards.op('||')(array([card], type_="BLOB"))
                 },
-                # Only perform the update if the card isn't already in the array
-                where=(~Balance.user_cards.contains(array([card], type_="CHAR")))
+                where=(~Balance.user_cards.contains(array([card], type_="BLOB")))
             )
 
             await session.execute(do_update_stmt)
@@ -93,7 +97,6 @@ async def update_user_cards(user_id: int, card: str):
 
             return True
     except IntegrityError:
-        print("Err")
         await session.rollback()
 
     return False

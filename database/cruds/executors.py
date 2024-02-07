@@ -50,7 +50,9 @@ async def get_all_executors_profiles(*args):
     try:
         async with async_session() as session:
             result = await session.execute(
-                select(User).join(Executor, User.telegram_id == Executor.user_id)
+                select(User).join(Executor, User.telegram_id == Executor.user_id).where(
+                    Executor.profile_state == ProfileStatus.accepted
+                )
             )
 
             return result.scalars().all()
@@ -110,7 +112,6 @@ async def get_executor_applications():
             result = await session.execute(
                 select(Executor).where(Executor.profile_state == ProfileStatus.created)
             )
-
             return result.scalars().all()
 
     except IntegrityError:

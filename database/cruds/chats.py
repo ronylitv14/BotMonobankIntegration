@@ -152,7 +152,7 @@ async def get_all_user_chats(
                         Chat.active == True,
                         Chat.in_use == False
                     )
-                )
+                ).order_by(asc(Chat.id))
             )
 
             return res.scalars().all()
