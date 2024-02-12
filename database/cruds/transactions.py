@@ -3,6 +3,7 @@ from sqlite3 import IntegrityError
 from typing import Optional
 
 from sqlalchemy import update, select, or_
+from database.cruds.balance import update_balance, BalanceAction
 
 from database.database import async_session
 from database.models import TransactionType, TransactionStatus, Transaction
@@ -73,3 +74,25 @@ async def get_user_transactions(
     except IntegrityError:
         print("Error")
         return []
+
+
+async def save_monobank_transaction_data(transaction_status, payload, user_id: int):
+    if transaction_status == 'success':
+        await update_transaction_status(
+            invoice_id=payload.get('invoiceId'),
+            new_status=TransactionStatus.completed
+        )
+
+        amount = decimal.Decimal(payload.get('amount')) / 100
+
+        await update_balance(
+            user_id=user_id,
+            amount=amount,
+            action=BalanceAction.replenishment
+        )
+
+    elif transaction_status == 'failure':
+        await update_transaction_status(
+            invoice_id=payload.get("invoiceId"),
+            new_status=TransactionStatus.failed
+        )
