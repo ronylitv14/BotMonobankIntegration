@@ -80,7 +80,8 @@ async def get_transaction_data(
         sender_id: int,
         receiver_id: int,
         task_id: Optional[int] = None,
-        transaction_type: Optional[TransactionType] = None
+        transaction_type: Optional[TransactionType] = None,
+        transaction_status: Optional[TransactionStatus] = None
 ):
     async with async_session() as session:
 
@@ -93,6 +94,8 @@ async def get_transaction_data(
             conditions.append(Transaction.task_id == task_id)
         if transaction_type is not None:
             conditions.append(Transaction.transaction_type == transaction_type)
+        if transaction_status is not None:
+            conditions.append(Transaction.transaction_status == transaction_status)
 
         res = await session.execute(
             select(Transaction).where(
