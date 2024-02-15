@@ -2,7 +2,7 @@ import decimal
 from sqlite3 import IntegrityError
 from typing import Optional
 
-from sqlalchemy import update, select, or_
+from sqlalchemy import update, select, or_, and_
 from database.cruds.balance import update_balance, BalanceAction
 
 from database.database import async_session
@@ -74,6 +74,35 @@ async def get_user_transactions(
     except IntegrityError:
         print("Error")
         return []
+
+
+async def get_transaction_data(
+        sender_id: int,
+        receiver_id: int,
+        task_id: Optional[int] = None,
+        transaction_type: Optional[TransactionType] = None
+):
+    async with async_session() as session:
+
+        conditions = [
+            (Transaction.sender_id == sender_id),
+            (Transaction.receiver_id == receiver_id),
+        ]
+
+        if task_id is not None:
+            conditions.append(Transaction.task_id == task_id)
+        if transaction_type is not None:
+            conditions.append(Transaction.transaction_type == transaction_type)
+
+        res = await session.execute(
+            select(Transaction).where(
+                and_(
+                    *conditions
+                )
+            )
+        )
+
+        return res.scalars().all()
 
 
 async def save_monobank_transaction_data(transaction_status, payload, user_id: int):

@@ -1,12 +1,14 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import HTTPException, status, Query
 from fastapi import Security
 from config import verify_token
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
-from database.cruds.transactions import add_transaction_data, update_transaction_status, get_user_transactions
+from database.cruds.transactions import add_transaction_data, update_transaction_status, get_user_transactions, \
+    get_transaction_data
 from database.cruds.payments import check_successful_payment, accept_done_offer, create_money_transfer
+from database.models import TransactionType
 
 from routers.payments_transactions.schemes import TransactionDataRequest, UpdateTransactionStatusRequest, \
     AcceptDoneOfferRequest, CreateTransfer, TransactionResponse, SuccessPayment
@@ -57,6 +59,26 @@ async def get_transactions(user_id: int):
     transactions = await get_user_transactions(user_id)
     if not transactions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No transactions found!")
+    return transactions
+
+
+@transactions_router.get("/", response_model=List[TransactionResponse])
+async def get_transaction_transfer(
+        sender_id: int,
+        receiver_id: int,
+        task_id: Optional[int] = None,
+        transaction_type: Optional[TransactionType] = None
+):
+    transactions = await get_transaction_data(
+        sender_id=sender_id,
+        receiver_id=receiver_id,
+        task_id=task_id,
+        transaction_type=transaction_type
+    )
+
+    if not transactions:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No transactions found!")
+
     return transactions
 
 
